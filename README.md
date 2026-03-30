@@ -54,3 +54,7 @@ Librerías utilizadas para el análisis exploratorio y la visualización de los 
 
 - **VS Code** → Editor de código utilizado para el desarrollo del proyecto.
 - **Git** → Sistema de control de versiones para la gestión del código y seguimiento de cambios en el proyecto.
+
+## Nota de ejecucion
+Para ejecutar el proyecto utilice el siguiente comando
+`python -m src.csv.pipline`

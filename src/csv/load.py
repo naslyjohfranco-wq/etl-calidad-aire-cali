@@ -11,12 +11,6 @@ def guardar_datos(df, ruta_salida="Data/processed/datos_limpios.csv"):
 
 def cargar_csv_mysql(df):
 
-    #print("📥 Leyendo CSV...")
-    #df = pd.read_csv(ruta_csv)
-    
-
-    print("🔌 Conectando a MySQL...")
-
     conexion = mysql.connector.connect(
         host="localhost",
         user="root",
@@ -26,47 +20,29 @@ def cargar_csv_mysql(df):
 
     cursor = conexion.cursor()
 
-    # =========================
-    # CREAR TABLA (si no existe)
-    # =========================
-    print("🛠️ Creando tabla si no existe...")
+    # 🔽 ESTANDARIZAR
+    df.columns = df.columns.str.lower()
 
-    cursor.execute(f"""
-        CREATE TABLE IF NOT EXISTS calidad_aire_nacional (
-            DATETIME DATETIME,
-            ESTACION VARCHAR(100),
-            VARIABLE VARCHAR(100),
-            VALOR DECIMAL(65, 0)
-        )
-    """)
-
-    # =========================
-    # INSERTAR DATOS
-    # =========================
-    print("⬆️ Insertando datos...")
-
-    query = f"""
-        INSERT INTO calidad_aire_nacional (DATETIME, ESTACION, VARIABLE, VALOR)
+    query = """
+        INSERT INTO calidad_aire_nacional (fecha, estacion, variable, valor_promedio)
         VALUES (%s, %s, %s, %s)
     """
 
-    datos = []
+    # convertir a lista rápida
+    datos = list(df[["fecha", "estacion", "variable", "valor_promedio"]].itertuples(index=False, name=None))
 
-    for _, fila in df.iterrows():
-        datos.append((
-            fila["DATETIME"],
-            fila["ESTACION"],
-            fila["VARIABLE"],
-            fila["VALOR"]
-        ))
+    # TAMAÑO DEL BLOQUE
+    tamaño_chunk = 5000
 
-    cursor.executemany(query, datos)
+    print("⬆️ Insertando datos por bloques...")
 
-    conexion.commit()
-
-    print(f"{cursor.rowcount} filas insertadas")
+    for i in range(0, len(datos), tamaño_chunk):
+        chunk = datos[i:i+tamaño_chunk]
+        cursor.executemany(query, chunk)
+        conexion.commit()
+        print(f"Insertadas {i + len(chunk)} filas")
 
     cursor.close()
     conexion.close()
 
-    print("🔒 Conexión cerrada")
+    print("✅ Carga completada")
